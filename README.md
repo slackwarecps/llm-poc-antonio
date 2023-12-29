@@ -1,5 +1,5 @@
 # poc-laranja-chatgpt
-Uso de AI generativa com a api do whatsapp para uma poc de integração. #Software  3.0
+Uso de AI generativa com a api do whatsapp para uma poc de integração. #Software  3.0 asdasdasd
 
 # thread
 ```
