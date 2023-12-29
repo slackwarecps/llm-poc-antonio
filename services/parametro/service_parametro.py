@@ -31,7 +31,7 @@ def func_parametros_busca_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('parametro')
+  table = dynamodb.Table('poc_azul_parametro')
 
   response = table.scan()
   

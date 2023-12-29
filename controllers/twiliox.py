@@ -21,7 +21,7 @@ from dotenv import load_dotenv, find_dotenv
 import requests
 import json
 import socketio
-import globais
+#import globais
 
 
 load_dotenv('config/.env')
@@ -199,7 +199,7 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
           linha =item['content'][0]['text']['value']          
           # 12 ENVIAR PARA O CLIENTE
           destino='whatsapp:'+telefone_do_cliente
-          remetente='whatsapp:18647407407' # tem que ser o numero da Jennifer Assistente 
+          remetente='whatsapp:14155238886' # tem que ser o numero da Jennifer Assistente 
           mensagem=linha
           
           nome_cliente = dynamo_cliente_busca_por_telefone(telefone_do_cliente)
@@ -207,7 +207,8 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
           time.sleep(2)
           func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino)
           data={'telefone':telefone_do_cliente,'nome':nome_cliente['nome'], 'conteudo':mensagem,'role':'assistant'}
-          globais.sio.emit('comando_criar_mensagem',data)
+          #socket
+          #globais.sio.emit('comando_criar_mensagem',data)
   
   #logging.info(' www Apagando a thread desse cliente por enquanto')
   #if telefone_do_cliente not in ['5511983477360']:
@@ -266,7 +267,8 @@ def insere_mensagem_na_thread(telefone,thread,mensagem):
   nome_cliente = dynamo_cliente_busca_por_telefone(telefone)
   data={'telefone':telefone,'nome':nome_cliente['nome'], 'conteudo':mensagem,
         'role':'user'}
-  globais.sio.emit('comando_criar_mensagem',data)
+  #socket
+  #globais.sio.emit('comando_criar_mensagem',data)
 
 
 
@@ -278,7 +280,7 @@ def dynamo_cliente_busca_por_telefone(telefone, dynamodb=None):
   else:
     dynamodb = boto3.resource('dynamodb')
     
-  table = dynamodb.Table('cliente')
+  table = dynamodb.Table('poc_azul_cliente')
   try:
     response = table.get_item(Key={'telefone': telefone})
   except ClientError as e:
@@ -299,7 +301,7 @@ def dynamo_thread_busca_por_telefone(telefone, dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('thread')
+  table = dynamodb.Table('poc_azul_thread')
   # Substitua pelo valor da chave de partição 'telefone' que você está buscando
   telefone_busca = telefone
 
@@ -344,7 +346,7 @@ def dynamo_cliente_salvar(telefone,ProfileName, dynamodb=None):
   # Pega a data e hora atual no fuso horário de Brasília
   data_atual_br = datetime.now(timezone)
   epoch = data_atual_br.timestamp()  
-  table = dynamodb.Table('cliente')
+  table = dynamodb.Table('poc_azul_cliente')
   ASSISTENTE_ID_VAR =  os.getenv("ASSISTENTE_ID_VAR")
   response = table.put_item( 
     Item={
@@ -364,7 +366,7 @@ def dynamo_thread_salvar(telefone,thread_criada, dynamodb=None):
   else:
     dynamodb = boto3.resource('dynamodb')    
 
-  table = dynamodb.Table('thread')
+  table = dynamodb.Table('poc_azul_thread')
   lista=[]
   response = table.put_item( 
     Item={
@@ -389,7 +391,7 @@ def dynamo_mensagem_salvar(telefone,thread,mensagem, dynamodb=None):
     thread
   ]
   
-  table = dynamodb.Table('thread')  
+  table = dynamodb.Table('poc_azul_thread')  
   response = table.update_item(
         TableName='thread',
         Key={
@@ -437,6 +439,8 @@ def func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino):
   TWILIO_BASIC_RESPOSTA = os.getenv("TWILIO_BASIC_RESPOSTA")
   TWILIO_ACCOUNT_SID= os.getenv("TWILIO_ACCOUNT_SID")
   STATUS_CALLBACK=os.getenv("STATUS_CALLBACK")
+  logging.info('    From twilio: ')
+  logging.info('    From twilio: '+remetente)
   url = "https://api.twilio.com/2010-04-01/Accounts/"+TWILIO_ACCOUNT_SID+"/Messages.json"
   payload = 'To='+destino+'&From='+remetente+'&Body='+mensagem+'&StatusCallback='+str(STATUS_CALLBACK)
   headers = {
@@ -468,7 +472,7 @@ def thread_apagar(telefone, dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')  
-  table = dynamodb.Table('thread')
+  table = dynamodb.Table('poc_azul_thread')
   # Agora podemos deletar o antigo item
   response_deletar = table.delete_item(
       Key={
@@ -485,7 +489,7 @@ def dynamo_thread_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('thread')
+  table = dynamodb.Table('poc_azul_thread')
 
   response = table.scan()
   
@@ -502,7 +506,7 @@ def dynamo_clientes_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('cliente')
+  table = dynamodb.Table('poc_azul_cliente')
 
   response = table.scan()
   
@@ -519,7 +523,7 @@ def dynamo_clientes_updatebyId(telefone,modo,dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('cliente')
+  table = dynamodb.Table('poc_azul_cliente')
 
   response = table.scan()
   
@@ -546,7 +550,7 @@ def dynamo_parametro_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('parametro')
+  table = dynamodb.Table('poc_azul_parametro')
 
   response = table.scan()
   
@@ -562,7 +566,7 @@ def dynamo_execucao_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
   else:
     dynamodb = boto3.resource('dynamodb')
-  table = dynamodb.Table('execucao')
+  table = dynamodb.Table('poc_azul_poc_azul_execucao')
 
   response = table.scan()
   
@@ -582,7 +586,7 @@ def dynamo_execucao_salvar(telefone,run_id,thread_id,created_at, dynamodb=None):
   else:
     dynamodb = boto3.resource('dynamodb')    
 
-  table = dynamodb.Table('execucao')
+  table = dynamodb.Table('poc_azul_execucao')
   response = table.put_item( 
     Item={
         'telefone': telefone,

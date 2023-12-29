@@ -94,11 +94,11 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
     #print(retorno)
     
     print('assistant_id='+assistant_id)
-    payload = {"assistant_id": 'asst_MussSoD9N4YjSVN8pk9a1bOu'}
+    payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
     logging.info("ASSISTENTE_ID: Bugiganga!!!xxxx")
   else:
-    payload = {"assistant_id": 'asst_Z1pMBbuDlAQLLJ0nyTMttgHl'}
-    logging.info("ASSISTENTE_ID: asst_Z1pMBbuDlAQLLJ0nyTMttgHl")
+    payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
+    logging.info("ASSISTENTE_ID: asst_8TumJSDdiN6xoPczLr4MktAu")
   
   # Fazendo a requisição POST
   url = url_api + '/threads/'+thread+'/runs'

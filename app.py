@@ -15,7 +15,7 @@ from dotenv import load_dotenv, find_dotenv
 import time
 from flask_cors import CORS
 import socketio
-import globais
+#import globais
 
 load_dotenv('config/.env')
 
@@ -38,7 +38,7 @@ def home():
  
   logging.info('chegou na home page!')
   logging.info('AMBIENTE=' + os.getenv("AMBIENTE"))
-  return '<h1> POC Laranja v1.0</h1>'+'<br>Ambiente='+ os.getenv("AMBIENTE"), 200
+  return '<h1> POC AZUL v1.0</h1>'+'<br>Ambiente='+ os.getenv("AMBIENTE"), 200
 
 @app.route('/teste', methods=['GET'])
 def teste():
@@ -228,7 +228,7 @@ if __name__ == "__main__":
   #   print(f"Não achei! O '{string_procurada}' deve ter saído para dar uma volta.")
   # Cria um cliente SocketIO
 
-  uri='http://ec2-44-203-190-75.compute-1.amazonaws.com'
+  uri='http://ec2-54-91-43-205.compute-1.amazonaws.com'
   #globais.sio.connect('http://localhost:8091')
 
   
