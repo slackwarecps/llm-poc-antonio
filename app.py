@@ -18,8 +18,8 @@ import socketio
 #import globais
 
 
-#load_dotenv('config/.env')
-load_dotenv()
+load_dotenv('config/.env')
+
 
 
 logging.basicConfig(filename='log/poc-azul.log', encoding='utf-8', level=logging.INFO)

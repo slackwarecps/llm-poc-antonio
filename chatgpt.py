@@ -4,13 +4,13 @@ import uuid
 import logging
 import json
 import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 import time
 
   
 
 debug=False
-load_dotenv(find_dotenv())
+load_dotenv('config/.env')
 
 api_key = os.getenv("GPT_API_KEY")
 

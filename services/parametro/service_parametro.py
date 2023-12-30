@@ -21,7 +21,7 @@ import requests
 import json
 
 
-load_dotenv('config/.env')
+load_dotenv('../../config/.env')
 VERSAO=os.getenv("VERSAO","V1")
 
 

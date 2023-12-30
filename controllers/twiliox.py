@@ -25,7 +25,7 @@ import socketio
 from datetime import datetime
 
 
-load_dotenv('config/.env')
+load_dotenv('../config/.env')
 VERSAO=os.getenv("VERSAO","V1")
 
 def func_twilio_chegou(request):
