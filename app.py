@@ -4,7 +4,7 @@ import chatgpt
 from chatgpt import func_gpt_status_do_run_do_assistente
 from chatgpt import func_gpt_busca_mensagens
 from controllers.twiliox import func_responde_ao_cliente_pelo_whatsapp
-from controllers.twiliox import dynamo_thread_todos
+from controllers.twiliox import dynamo_thread_todos,dynamo_mensagem_salvar
 from controllers.twiliox import dynamo_clientes_todos,dynamo_parametro_todos,dynamo_clientes_updatebyId,dynamo_execucao_todos
 import logging
 from controllers.twiliox import func_twilio_chegou
@@ -44,11 +44,11 @@ def home():
 def teste():
 
   logging.info('TESTE')
-  print('T_THREAD=' + os.getenv("T_THREAD"))
-  print('AMBIENTE=' + os.getenv("AMBIENTE"))
-  print('ASSISTENTE_ID=' + os.getenv("ASSISTENTE_ID"))
+  #dynamo_thread_update_UltimaRespostaByTelefone("5511983477360", 1234)
+  dynamo_mensagem_salvar("5519981857976","thread_h0tWPIgEucMek0aNRTbrdGVq","alguma coisa")
+
   #func_gpt_busca_mensagens(os.getenv("T_THREAD"))
-  return 'POC AZUL v1.0', 200
+  return 'Teste v1.0', 200
 
 
 

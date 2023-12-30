@@ -62,7 +62,7 @@ def func_gpt_criar_mensagem(thread,mensagem):
             "content": mensagem
     }
   # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread+'/messages'
+  url = url_api + '/threads/'+thread['id']+'/messages'
   response = requests.post(url, headers=headers,data=json.dumps(payload))
   #logging.info("status_code="+str(response.status_code))
   # Verifica se a requisição foi bem-sucedida
@@ -79,7 +79,7 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
 
   logging.info(' #9 Entrou na func_gpt_criar_mensagem ') 
   
-  logging.info("thread: "+ thread)
+  logging.info("thread: "+ thread['id'])
   #time.sleep(10)
   #Fabio usa o bugiganga
   print('telefone='+telefone)
@@ -101,7 +101,7 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
     logging.info("ASSISTENTE_ID: asst_8TumJSDdiN6xoPczLr4MktAu")
   
   # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread+'/runs'
+  url = url_api + '/threads/'+thread['id']+'/runs'
   response = requests.post(url, headers=headers,data=json.dumps(payload))
   #logging.info("status_code="+str(response.status_code))
   # Verifica se a requisição foi bem-sucedida
@@ -120,7 +120,7 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
 def func_gpt_status_do_run_do_assistente(thread_id,run_id):
   logging.info(' #11 Entrou na func_gpt_status_do_run_do_assistente ') 
   logging.info("assistant_id: "+ assistant_id)
-  logging.info("thread: "+ thread_id)
+  logging.info("thread: "+ str(thread_id))
   # Fazendo a requisição POST
   url = url_api + '/threads/'+thread_id+'/runs/'+run_id
   response = requests.get(url, headers=headers)

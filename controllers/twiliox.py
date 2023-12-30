@@ -22,6 +22,7 @@ import requests
 import json
 import socketio
 #import globais
+from datetime import datetime
 
 
 load_dotenv('config/.env')
@@ -66,7 +67,7 @@ def func_twilio_chegou(request):
 
       
     
-  ## CLIENTE NAO CADASTRADO PRIMEIRO ACESSO!!
+  ## CLIENTE NAO CADASTRADO, PRIMEIRO ACESSO!!
   else:
     
     logging.info('  #1. cliente NAO esta na base, entao vai ser criado')
@@ -81,15 +82,17 @@ def func_twilio_chegou(request):
   # #2 Ja existe uma conversa ativa para esse numero/cliente?
   if VERSAO=='V1':
     existe_thread = verifica_existe_thread_cliente(telefone)
-    print('existe thread = '+existe_thread)
-    if existe_thread!='null':
+    logging.info(existe_thread)
+    
+    if 'id' in existe_thread:
+      #if existe_thread!='null':
       logging.info('  Sim Existe thread  :)')    
     else:
       logging.info('  Não existe thread  :(  )')      
       # 50 criar a thead do gpt
       thread_criada = func_gpt_criar_thread()
       print(thread_criada)
-      existe_thread=thread_criada['id']
+      existe_thread=thread_criada
       # 4 Criar a thread no banco
       thread_db = dynamo_thread_salvar(telefone,thread_criada)
       logging.info(' #4 thread salva no banco de de dados :' + thread_criada['id'])
@@ -129,9 +132,9 @@ def func_twilio_chegou(request):
       
     run_id = roda_assistente(thread,telefone,beta_assistente_personalizado,beta)
     print('run_id='+run_id)
-    print('thread='+thread)
+    print('thread='+thread['id'])
     # 14 Aguarda JUMP para Fase Assincrona
-    aguarda_execucao_do_assistente(thread,run_id,telefone)
+    aguarda_execucao_do_assistente(thread['id'],run_id,telefone)
   else:
     logging.info('  MODO_ASSISTENTE=FALSE!!! NAO VOU FAZER NADA!!!')
 
@@ -144,6 +147,7 @@ def func_twilio_chegou(request):
 def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
   load_dotenv()
   logging.info(' #14 func_gpt_status_do_run_do_assistente')
+  logging.info(thread)
   retorno = func_gpt_status_do_run_do_assistente(thread,run_id)
   logging.info(' status do run='+retorno['status'])
   
@@ -191,24 +195,49 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
     logging.info('ENVIA PARA O WHATS AQUI >>>')
     payload_json =lista_de_mensagens_full
     #print(payload_json)
-  
+    o_thread =  dynamo_thread_busca_por_telefone(telefone_do_cliente)
+    epUltima=0
+    if 'ultima_resposta_do_assistente' in o_thread:
+      print(o_thread['ultima_resposta_do_assistente'])
+      ultima_resposta_do_assistente=o_thread['ultima_resposta_do_assistente']
+      logging.info("ultima_resposta_do_assistente="+ str(ultima_resposta_do_assistente))
+      epUltima=datetime.fromtimestamp(int(ultima_resposta_do_assistente))
+    
+    
+    
+    
+    
     if 'data' in payload_json:
       data2 = payload_json['data']      
       for item in data2:
-        if item['role'] == 'assistant':          
-          linha =item['content'][0]['text']['value']          
-          # 12 ENVIAR PARA O CLIENTE
-          destino='whatsapp:'+telefone_do_cliente
-          remetente='whatsapp:14155238886' # tem que ser o numero da Jennifer Assistente 
-          mensagem=linha
-          
-          nome_cliente = dynamo_cliente_busca_por_telefone(telefone_do_cliente)
-          #print(nome_cliente['nome'])
-          time.sleep(2)
-          func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino)
-          data={'telefone':telefone_do_cliente,'nome':nome_cliente['nome'], 'conteudo':mensagem,'role':'assistant'}
-          #socket
-          #globais.sio.emit('comando_criar_mensagem',data)
+        if item['role'] == 'assistant': 
+          if epUltima != 0:
+            if  ultima_resposta_do_assistente > item['created_at'] :
+              logging.info('  MAIS NOVO A RESPOSTA          ')
+              logging.info("ultima_resposta_do_assistente="+ str(epUltima))
+              epLinha=datetime.fromtimestamp(item['created_at'])
+              logging.info("epLinha="+ str(epLinha)+" >> "+str(item['created_at']))
+            else:
+              logging.info('  MAIS VELHA A RESPOSTA           ')            
+              epLinha=datetime.fromtimestamp(item['created_at'])
+              logging.info("ultima_resposta_do_assistente="+ str(epUltima))
+              logging.info("epLinha="+ str(epLinha)+" >> "+str(item['created_at']))
+            
+              linha =item['content'][0]['text']['value']          
+              # 12 ENVIAR PARA O CLIENTE
+              destino='whatsapp:'+telefone_do_cliente
+              remetente='whatsapp:14155238886' # tem que ser o numero da Jennifer Assistente 
+              mensagem=linha
+              
+              nome_cliente = dynamo_cliente_busca_por_telefone(telefone_do_cliente)
+              #print(nome_cliente['nome'])
+              time.sleep(2)
+              func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino)
+              data={'telefone':telefone_do_cliente,'nome':nome_cliente['nome'], 'conteudo':mensagem,'role':'assistant'}
+              #socket
+              #globais.sio.emit('comando_criar_mensagem',data)
+          # Salvar o horario da ultima resposta dessa thread!!!
+          dynamo_thread_update_UltimaRespostaByTelefone(telefone_do_cliente,item['created_at'])
   
   #logging.info(' www Apagando a thread desse cliente por enquanto')
   #if telefone_do_cliente not in ['5511983477360']:
@@ -216,6 +245,7 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
   #time.sleep(10)
   logging.info(' :) FIM DO PROCESSO!!!')
   # limpar a thread
+  
   
   logging.info('            ')
   logging.info('            ')
@@ -326,8 +356,9 @@ def dynamo_thread_busca_por_telefone(telefone, dynamodb=None):
     if 'Items' in resposta: 
         if resposta['Count']==0: 
           return 'null'  
-        else:            
-          return resposta['Items'][0]['id']
+        else:          
+          logging.info(resposta['Items'][0])  
+          return resposta['Items'][0]
     else:
       return 'null'
   
@@ -359,6 +390,8 @@ def dynamo_cliente_salvar(telefone,ProfileName, dynamodb=None):
   )
   return response
 
+
+
 def dynamo_thread_salvar(telefone,thread_criada, dynamodb=None):
   logging.info(' #4 50. Insere Cliente na Base:' +telefone)
   if os.getenv("BANCO")=='LOCAL':
@@ -374,11 +407,14 @@ def dynamo_thread_salvar(telefone,thread_criada, dynamodb=None):
         'status': 'ativo',
         'id':thread_criada['id'],
         'created':thread_criada['created_at'],
+        'ultima_resposta_do_assistente':thread_criada['created_at'],
         'messages':lista
         
     }
   )
   return response
+
+
 
 def dynamo_mensagem_salvar(telefone,thread,mensagem, dynamodb=None):
   logging.info('   #5 51. Insere Mensagem na Base:' +telefone)
@@ -393,7 +429,7 @@ def dynamo_mensagem_salvar(telefone,thread,mensagem, dynamodb=None):
   
   table = dynamodb.Table('poc_azul_thread')  
   response = table.update_item(
-        TableName='thread',
+        TableName='poc_azul_thread',
         Key={
             'telefone':telefone,
             'status':'ativo'
@@ -439,8 +475,8 @@ def func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino):
   TWILIO_BASIC_RESPOSTA = os.getenv("TWILIO_BASIC_RESPOSTA")
   TWILIO_ACCOUNT_SID= os.getenv("TWILIO_ACCOUNT_SID")
   STATUS_CALLBACK=os.getenv("STATUS_CALLBACK")
-  logging.info('    From twilio: ')
-  logging.info('    From twilio: '+remetente)
+  #logging.info('    From twilio: ')
+  #logging.info('    From twilio: '+remetente)
   url = "https://api.twilio.com/2010-04-01/Accounts/"+TWILIO_ACCOUNT_SID+"/Messages.json"
   payload = 'To='+destino+'&From='+remetente+'&Body='+mensagem+'&StatusCallback='+str(STATUS_CALLBACK)
   headers = {
@@ -448,10 +484,10 @@ def func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino):
   'Authorization': 'Basic '+TWILIO_BASIC_RESPOSTA
   }  
   response = requests.request("POST", url, headers=headers, data=payload)
-  logging.info('    Resposta da twilio: ')
-  logging.info('    >> : '+response.text)
-  logging.info('    Enviou whatsapp pela twilio ')
-  logging.info(     ' ')
+  #logging.info('    Resposta da twilio: ')
+  #logging.info('    >> : '+response.text)
+  #logging.info('    Enviou whatsapp pela twilio ')
+  #logging.info(     ' ')
   
   
 
@@ -538,7 +574,29 @@ def dynamo_clientes_updatebyId(telefone,modo,dynamodb=None):
   return response
 
 
-
+def dynamo_thread_update_UltimaRespostaByTelefone(telefone,ultima_resposta_do_assistente=0,dynamodb=None):
+  logging.info(' >>>>> Update da thread ULTIMA MENSAGEM ='+telefone+' ultima_resposta_do_assistente='+str(ultima_resposta_do_assistente))
+  if os.getenv("BANCO")=='LOCAL':
+    dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+  else:
+    dynamodb = boto3.resource('dynamodb')
+  table = dynamodb.Table('poc_azul_thread')
+  valorNovo2 = int(ultima_resposta_do_assistente)
+  valorNovo = int(datetime.utcnow().timestamp())
+  status_chave = 'ativo'
+  # Atualiza o item na tabela
+  try:
+    response = table.update_item(
+        Key={'telefone': telefone,
+             'status': status_chave},
+        UpdateExpression='SET ultima_resposta_do_assistente = :val',
+        ExpressionAttributeValues={':val': valorNovo},
+        ReturnValues='UPDATED_NEW'
+    )
+    print(f"Registro atualizado com sucesso! Novo valor: {response['Attributes']}")
+  except Exception as e:
+    print(f"Erro ao atualizar o registro: {e}")
+  return 'OK'
 
 
 
@@ -579,7 +637,7 @@ def dynamo_execucao_todos(dynamodb=None):
 def dynamo_execucao_salvar(telefone,run_id,thread_id,created_at, dynamodb=None):
   logging.info(' #4 50. Insere execucao na Base:' +telefone)
   logging.info(' #4 50. Insere execucao na Base:' +run_id)
-  logging.info(' #4 50. Insere execucao na Base:' +thread_id)
+  logging.info(' #4 50. Insere execucao na Base:' +thread_id['id'])
   logging.info(' #4 50. Insere execucao na Base:' +created_at)
   if os.getenv("BANCO")=='LOCAL':
     dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
