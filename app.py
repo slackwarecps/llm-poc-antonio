@@ -11,14 +11,15 @@ from controllers.twiliox import func_twilio_chegou
 from services.parametro.service_parametro import func_parametros_busca_todos
 
 import os
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 import time
 from flask_cors import CORS
 import socketio
 #import globais
 
-load_dotenv('config/.env')
 
+#load_dotenv('config/.env')
+load_dotenv()
 
 
 logging.basicConfig(filename='log/poc-azul.log', encoding='utf-8', level=logging.INFO)
@@ -32,6 +33,9 @@ api_bff='/bff/v1/'
 # Flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+
 
 @app.route('/', methods=['GET'])
 def home():
@@ -208,10 +212,7 @@ def bff_parametro():
 
 
 if __name__ == "__main__":
-  AMBIENTE = os.getenv("AMBIENTE")
-  print('AMBIENTE='+AMBIENTE)
-  BANCO = os.getenv("BANCO")
-  print('BANCO='+BANCO)
+
   
   # retorno = func_parametros_busca_todos()
   # print(retorno)
@@ -232,7 +233,9 @@ if __name__ == "__main__":
   #globais.sio.connect('http://localhost:8091')
 
   
-  
+
+  print('AMBIENTE='+os.getenv("AMBIENTE"))
+  print('BANCO='+os.getenv("BANCO"))
   print('VERSAO_LOGICA='+os.getenv("VERSAO"))
   print('PROJETO='+os.getenv("PROJETO"))
   
