@@ -9,12 +9,16 @@ from controllers.twiliox import dynamo_clientes_todos,dynamo_parametro_todos,dyn
 import logging
 from controllers.twiliox import func_twilio_chegou
 from services.parametro.service_parametro import func_parametros_busca_todos
+from services.api_azul_agendamentos import agendamento_cancelar
 
 import os
 from dotenv import load_dotenv
 import time
 from flask_cors import CORS
 import socketio
+from services.sqs import sqs_enviar_mensagem
+import uuid
+import json
 #import globais
 
 
@@ -122,15 +126,34 @@ def service_health():
 ####
 ### TESTES, sim depois pode apagar isso aqui :) #to-do
 ####
-@app.route(api+'teste/envia-zap', methods=['POST'])
-def teste_envia_zap():
-  logging.info('POST >> no teste_envia_zap')
-  logging.info('<<TO-DO ENVIAR PARA O WHATS AQUI>>>')  
-  remetente='whatsapp:'+os.getenv("REMETENTE_TWILIO_WHATS") #jennifer numero
-  mensagem='Com grandes poderes vem grandes responsabilidades, pequeno gafanhoto... #ale'
-  destino='whatsapp:5511983477360' #Teste do Fabio
-  func_responde_ao_cliente_pelo_whatsapp(remetente, mensagem,destino)
-  return ('', 201)
+@app.route(api+'teste/slot1', methods=['GET'])
+def teste_slot1():
+  logging.info('GET >> teste/slot1')
+  retorno = agendamento_cancelar(26721993880,'Estou de ferias')
+  logging.info(retorno)
+  logging.info('=============================')
+  return (retorno, 201)
+
+@app.route(api+'teste/slot2', methods=['POST'])
+def teste_slot2():
+  gerado_uuid = str(uuid.uuid4() )
+  
+  data_json = request.get_json()
+  logging.info('POST >> teste/slot2')
+  
+  logging.info(data_json)
+  objeto = {
+    'uuid':gerado_uuid,
+    'data':data_json['data'],
+    'horario':data_json['horario'],
+    'vistoriador_remoto': data_json['vistoriador_remoto'],
+    'dados':data_json['dados']
+    }
+  
+  retorno = sqs_enviar_mensagem(objeto)
+  
+  logging.info('=============================')
+  return (retorno, 201)
 
 
 ####

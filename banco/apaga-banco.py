@@ -2,9 +2,6 @@ import boto3
 import os
 from dotenv import load_dotenv
 import logging
-from cria_tabela_execucao import criar_tabela_dynamodb_execucao 
-from cria_tabela_parametro import  criar_tabela_dynamodb_parametro
-from cria_tabela_thread import criar_tabela_dynamodb_thread
 load_dotenv('../config/.env')
 
 

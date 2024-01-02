@@ -1,0 +1,38 @@
+{
+  "data": "teste123",
+  "messages": [
+    {
+      "vistoria_codigo": 1230,
+      "placa": "abc1234",
+      "modelo": "Honda Civic 2019",
+      "nome": "Fabio Pereira",
+      "data_agendamento": "20/01/2024",
+      "horario_agendamento": "08:30"
+    },
+    {
+      "vistoria_codigo": 2222,
+      "placa": "xsw2122",
+      "nome": "Ana Garcia",
+      "modelo": "Renegade 2022",
+      "data_agendamento": "07/01/2024",
+      "horario_agendamento": "09:30"
+    },
+    {
+      "vistoria_codigo": 3333,
+      "placa": "cde3132",
+      "modelo": "Fusca 2000",
+      "nome": "Marcelo Del Poente",
+      "data_agendamento": "05/01/2024",
+      "horario_agendamento": "10:30"
+    },
+    {
+      "vistoria_codigo": 4240,
+      "placa": "ENI8B43",
+      "modelo": "Tracker LT Turbo",
+      "nome": "Denilson Silva",
+      "data_agendamento": "15/01/2024",
+      "horario_agendamento": "12:30"
+    }
+  ],
+  "alguma_coisa": "pato de borracha"
+}

@@ -76,19 +76,19 @@ def func_twilio_chegou(request):
     #pprint(resposta, sort_dicts=False)
     telefone=wa_id
     cliente_modo = True
-  
-  ## FASE 2 ================= 
+
+  ## FASE 2 =================
 
   # #2 Ja existe uma conversa ativa para esse numero/cliente?
   if VERSAO=='V1':
     existe_thread = verifica_existe_thread_cliente(telefone)
     logging.info(existe_thread)
-    
+
     if 'id' in existe_thread:
       #if existe_thread!='null':
-      logging.info('  Sim Existe thread  :)')    
+      logging.info('  Sim Existe thread  :)')
     else:
-      logging.info('  Não existe thread  :(  )')      
+      logging.info('  Não existe thread  :(  )')
       # 50 criar a thead do gpt
       thread_criada = func_gpt_criar_thread()
       print(thread_criada)
@@ -107,7 +107,7 @@ def func_twilio_chegou(request):
     logging.info(' NAO VERIFICO THREAD LOGICA V2 CRIO SEMPRE UMA NOVA')      
     # 50 criar a thead do gpt
     thread_criada = func_gpt_criar_thread()
-    print(thread_criada)
+    logging.info(thread_criada)
     existe_thread=thread_criada['id']
     # 4 Criar a thread no banco
     thread_db = dynamo_thread_salvar(telefone,thread_criada)
@@ -115,26 +115,31 @@ def func_twilio_chegou(request):
 
     
   # #5 Insere a Mensagem na thread
-
+  logging.info('cliente_modo='+str(cliente_modo))
   if cliente_modo==True:
     thread=existe_thread
     retorno_msg=insere_mensagem_na_thread(telefone,thread,mensagem)
     
     # 9 Roda o Assistente
     dados_cliente=dynamo_cliente_busca_por_telefone(telefone)
-    print(dados_cliente)
+    logging.info(dados_cliente)
     beta_assistente_personalizado=''
     if 'assistant_id' in dados_cliente:
       beta_assistente_personalizado = dados_cliente['assistant_id']
-      print(beta_assistente_personalizado)
+      logging.info(beta_assistente_personalizado)
     else:
-      print('nao tem o assistant_id na tabela')
+      logging.info('nao tem o assistant_id na tabela')
       
     run_id = roda_assistente(thread,telefone,beta_assistente_personalizado,beta)
-    print('run_id='+run_id)
-    print('thread='+thread['id'])
-    # 14 Aguarda JUMP para Fase Assincrona
-    aguarda_execucao_do_assistente(thread['id'],run_id,telefone)
+    logging.info('run_id='+run_id)
+    if run_id!= 'null':      
+      logging.info('run_id='+run_id)
+      logging.info('thread='+thread['id'])
+      # 14 Aguarda JUMP para Fase Assincrona
+      aguarda_execucao_do_assistente(thread['id'],run_id,telefone)
+    else:
+      logging.error('twiliox.func_twilio_chegou | Erro, nao tem o run_id')
+    
   else:
     logging.info('  MODO_ASSISTENTE=FALSE!!! NAO VOU FAZER NADA!!!')
 
@@ -161,10 +166,14 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
     time.sleep(1)
     execucao_registro = retorno
     logging.info(' STATUS_THREAD='+retorno['status'])
-    if (contador_aguarde ==180 ) or (retorno['status']=='completed'):
+    if (contador_aguarde ==180 ) or (retorno['status']=='completed') or (retorno['status']=='requires_action'):
       ultimo_status=retorno['status']      
       if ultimo_status!='completed':
         logging.warning(' Saiu por time-out 120 segundos')
+        timeout_flag=True
+      if ultimo_status=='requires_action':
+        logging.warning('>>>>>>>>>>> Aguardando acao do usuario:')
+        logging.info(retorno)
         timeout_flag=True
       
       break  
@@ -465,8 +474,17 @@ def roda_assistente(thread,telefone='',beta_assistente_personalizado='',beta=[])
   logging.info(' #9 rodando o Assistente...')
   print('#9 beta')
   print(beta)
-  run_id=func_gpt_rodar_assistente(thread,telefone,beta_assistente_personalizado,beta)
-  return run_id['id']
+  retorno =func_gpt_rodar_assistente(thread,telefone,beta_assistente_personalizado,beta)
+  logging.info('    DEBUUUUGGGGG!!!!! ')
+  logging.info('     ')
+  logging.info('     ')
+  logging.info(retorno)
+  resposta = 'null'
+  if 'id' in retorno:
+    run_id=retorno['id']
+    resposta=run_id
+ 
+  return resposta
 
 
 # TWILIO :: ENVIO DE VOLTA PARA O CLIENTE

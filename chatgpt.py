@@ -6,30 +6,79 @@ import json
 import os
 from dotenv import load_dotenv
 import time
-
+from services.sqs import sqs_enviar
   
 
 debug=False
 load_dotenv('config/.env')
 
-api_key = os.getenv("GPT_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # Endpoint da GPT-4 API
 url_api = 'https://api.openai.com/v1'
-assistant_id = 'asst_Z1pMBbuDlAQLLJ0nyTMttgHl'
+ASSISTENTE_ID_VAR = os.getenv("ASSISTENTE_ID_VAR") #'asst_Z1pMBbuDlAQLLJ0nyTMttgHl'
 
 # Cria um identificador único para a sessão da conversa
 session_id = str(uuid.uuid4())
 
 # Cabeçalhos para a requisição
 headers = {
-    'Authorization': f'Bearer {api_key}',
+    'Authorization': f'Bearer {OPENAI_API_KEY}',
     'Content-Type': 'application/json',
     'OpenAI-Beta': 'assistants=v1',
 }
 
-
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "The temperature unit to use. Infer this from the users location.",
+                    },
+                },
+                "required": ["location", "format"],
+            },
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_n_day_weather_forecast",
+            "description": "Get an N-day weather forecast",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "description": "The temperature unit to use. Infer this from the users location.",
+                    },
+                    "num_days": {
+                        "type": "integer",
+                        "description": "The number of days to forecast",
+                    }
+                },
+                "required": ["location", "format", "num_days"]
+            },
+        }
+    },
+]
 
 
 def func_gpt_criar_thread():
@@ -74,6 +123,10 @@ def func_gpt_criar_mensagem(thread,mensagem):
     logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
     return 'null'
 
+
+
+
+
 def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
   logging.info("name: "+ __name__)
 
@@ -88,11 +141,7 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
   print(beta)
   
   
-  if telefone in beta:
-    
-    #retorno = func_parametros_busca_todos()
-    #print(retorno)
-    
+  if telefone in beta:    
     print('assistant_id='+assistant_id)
     payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
     logging.info("ASSISTENTE_ID: Bugiganga!!!xxxx")
@@ -108,18 +157,46 @@ def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
   if response.status_code == 200:
     logging.info("   #9 Assistente foi acionado no chat gpt")
     logging.info(response.json())
+    
+    try:
+      #Deu certo coloca na fila
+      # Insere na fila SQS service/sqs
+      gerado_uuid = str(uuid.uuid4() )
+      dados = {
+        "thread_id": response['thread_id'],
+        "run_id": response['id']
+      }
+      objeto = {
+      'uuid':gerado_uuid,
+      'data':response['created_at'],
+      'horario':response['horario'],
+      'vistoriador_remoto': response['vistoriador_remoto'],
+      'dados':dados
+      }    
+      retorno_sqs = sqs_enviar(objeto)
+      logging.info(retorno_sqs)
+    except Exception as e:        
+        logging.error(f"chatgpt.func_gpt_rodar_assistente >> Erro ao Colocar na fila sqs!!: {e}")
+    
     return response.json()
   else:
-    logging.error("   #9 Falha ao Assistente foi acionado no chat gpt")
+    logging.error("   #9 Falha ao chatgpt/RodarAssistente")
     logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
     return 'null'
+  
+
+  
+  
+  
+  
+  
   
   
 # RODA O ALGORITIMO DO CHATGPT RUN 
 # 'expired','in_progress','completed'
 def func_gpt_status_do_run_do_assistente(thread_id,run_id):
   logging.info(' #11 Entrou na func_gpt_status_do_run_do_assistente ') 
-  logging.info("assistant_id: "+ assistant_id)
+  logging.info("assistant_id: "+ ASSISTENTE_ID_VAR)
   logging.info("thread: "+ str(thread_id))
   # Fazendo a requisição POST
   url = url_api + '/threads/'+thread_id+'/runs/'+run_id

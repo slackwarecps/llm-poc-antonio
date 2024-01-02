@@ -33,8 +33,11 @@ def func_parametros_busca_todos(dynamodb=None):
     dynamodb = boto3.resource('dynamodb')
   table = dynamodb.Table('poc_azul_parametro')
 
-  response = table.scan()
-  
+  try:
+    response = table.scan()
+  except:
+    print("Erro Ao buscar tabela de parametros no Dynamodb")
+
   while 'LastEvaluatedKey' in response:
       response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
       for item in response['Items']:
