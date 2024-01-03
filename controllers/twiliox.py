@@ -19,6 +19,7 @@ from services.parametro.service_parametro import func_parametros_busca_todos
 import os
 from dotenv import load_dotenv, find_dotenv
 import requests
+import uuid
 import json
 import socketio
 #import globais
@@ -166,17 +167,42 @@ def aguarda_execucao_do_assistente(thread,run_id,telefone_do_cliente):
     time.sleep(1)
     execucao_registro = retorno
     logging.info(' STATUS_THREAD='+retorno['status'])
-    if (contador_aguarde ==180 ) or (retorno['status']=='completed') or (retorno['status']=='requires_action'):
+    if (contador_aguarde ==180 ) or (retorno['status']=='completed'):
       ultimo_status=retorno['status']      
       if ultimo_status!='completed':
         logging.warning(' Saiu por time-out 120 segundos')
         timeout_flag=True
-      if ultimo_status=='requires_action':
+          
+      break
+    
+    if (retorno['status']=='requires_action'):
         logging.warning('>>>>>>>>>>> Aguardando acao do usuario:')
-        logging.info(retorno)
-        timeout_flag=True
+        #logging.info(retorno)
+        #ja esta em 'requires_action'? "ultimo_status_recebido":"in_progress",
+        retorno_thread = dynamo_thread_busca_por_telefone(telefone_do_cliente)
+        logging.info(retorno_thread['ultimo_status_recebido'])
+        #sim, nao faz nada
+        #nao, entao cria comando e muda o estado da thread
+        if retorno_thread['ultimo_status_recebido']!='requires_action':
+          dynamo_thread_update_StatusByTelefone(telefone_do_cliente,'requires_action')
+          #update estado da thread
+          gerado_uuid = str(uuid.uuid4() )
+          dados={
+            "thread_id" : retorno["thread_id"],
+            "run_id" :  retorno["id"]
+          }
+          objeto = {
+            'uuid':gerado_uuid,
+            'data': '01-01-2023',
+            'horario':'12:12:12',
+            'vistoriador_remoto': 'ninguem',
+            'dados':dados
+            }
+          
+          retorno = sqs_enviar_mensagem(objeto)
+        
+        
       
-      break  
     contador_aguarde=contador_aguarde+1
   # 15 Se deu certo aguardar entao pega as mensagens do assistente e envia de volta.  
   if (timeout_flag==False):
@@ -352,11 +378,6 @@ def dynamo_thread_busca_por_telefone(telefone, dynamodb=None):
     resposta = table.query(
        KeyConditionExpression=Key('telefone').eq(telefone_busca) & Key('status').eq(status_filtar)
     )    
-    # Extrai e imprime os itens
-    #items = resposta['Items']
-    #for item in items:
-    #  print(item['id'])    
-    #print(resposta)   
     
   except ClientError as e:
     print(e.response['Error']['Message'])
@@ -366,7 +387,7 @@ def dynamo_thread_busca_por_telefone(telefone, dynamodb=None):
         if resposta['Count']==0: 
           return 'null'  
         else:          
-          logging.info(resposta['Items'][0])  
+          #logging.info(resposta['Items'][0])  
           return resposta['Items'][0]
     else:
       return 'null'
@@ -617,7 +638,29 @@ def dynamo_thread_update_UltimaRespostaByTelefone(telefone,ultima_resposta_do_as
   return 'OK'
 
 
+def dynamo_thread_update_StatusByTelefone(telefone,status='',dynamodb=None):
+  logging.info(' >>>>> twiliox.dynamo_thread_update_StatusByTelefone ='+telefone+' status='+str(status))
+  if os.getenv("BANCO")=='LOCAL':
+    dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+  else:
+    dynamodb = boto3.resource('dynamodb')
+  table = dynamodb.Table('poc_azul_thread')
 
+  valorNovo = status
+  status_chave = 'ativo'
+  # Atualiza o item na tabela
+  try:
+    response = table.update_item(
+        Key={'telefone': telefone,
+             'status': status_chave},
+        UpdateExpression='SET ultimo_status_recebido = :val',
+        ExpressionAttributeValues={':val': valorNovo},
+        ReturnValues='UPDATED_NEW'
+    )
+    logging.info("thread atualizada campos status")
+  except Exception as e:
+    print(f"Erro ao atualizar o registro: {e}")
+  return 'OK'
 
 
 def dynamo_parametro_todos(dynamodb=None):

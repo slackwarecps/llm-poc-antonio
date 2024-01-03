@@ -231,3 +231,27 @@ def func_gpt_busca_mensagens(thread_id=''):
     logging.error("   #15 Falha ao busca_mensagens")
     logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
     return 'null'
+  
+def func_gpt_submit_tool(thread_id='',run_id='',tool_call_id='',output=''):
+  logging.info('>>> func_gpt.func_gpt_submit_tool') 
+  
+  payload= {
+              "tool_outputs": [
+                  {
+                      "tool_call_id": tool_call_id,
+                      "output": output
+                  }
+              ]
+            }
+  # Fazendo a requisição POST
+  url = url_api + '/threads/'+thread_id+'/runs/'+run_id+'/submit_tool_outputs'
+  
+  response = requests.post(url, headers=headers,data=json.dumps(payload))
+ 
+
+  if response.status_code == 200:
+    return response.json()
+  else:
+    logging.error(">>> Falha func_gpt.func_gpt_submit_tool")
+    #logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
+    return 'null'

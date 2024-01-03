@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, url_for,jsonify
 
 import chatgpt
-from chatgpt import func_gpt_status_do_run_do_assistente
+from chatgpt import func_gpt_submit_tool
 from chatgpt import func_gpt_busca_mensagens
 from controllers.twiliox import func_responde_ao_cliente_pelo_whatsapp
 from controllers.twiliox import dynamo_thread_todos,dynamo_mensagem_salvar
@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import time
 from flask_cors import CORS
 import socketio
-from services.sqs import sqs_enviar_mensagem
+from services.sqs import sqs_enviar_mensagem,sqs_enviar_comando_3,sqs_enviar_comando_2,sqs_enviar_comando_1
 import uuid
 import json
 #import globais
@@ -155,6 +155,75 @@ def teste_slot2():
   logging.info('=============================')
   return (retorno, 201)
 
+@app.route(api+'teste/slot3', methods=['POST'])
+def teste_slot3():
+  
+  data_json = request.get_json()
+  logging.info('POST >> teste/slot3')
+  
+  logging.info(data_json)
+  objeto = {
+    'dados':data_json['dados']
+    }
+  
+  retorno = sqs_enviar_comando_3(objeto)
+  
+  logging.info('=============================')
+  return (retorno, 201)
+
+
+@app.route(api+'teste/slot4', methods=['POST'])
+def teste_slot4():
+  
+  data_json = request.get_json()
+  logging.info('POST >> teste/slot4')
+  
+  logging.info(data_json)
+  objeto = {
+    'dados':data_json['dados']
+    }
+  
+  retorno = func_gpt_submit_tool(data_json['dados']['thread_id'],
+                                 data_json['dados']['run_id'],
+                                 data_json['dados']['tool_call_id'],
+                                 data_json['dados']['output']
+                                 )
+  
+  logging.info('=============================')
+  return (retorno, 201)
+
+@app.route(api+'teste/slot5', methods=['POST'])
+def teste_slot5():
+  
+  data_json = request.get_json()
+  logging.info('POST >> teste/slot5')
+  
+  logging.info(data_json)
+  objeto = {
+    'dados':data_json['dados']
+    }
+  
+  retorno = sqs_enviar_comando_2(objeto)
+  
+  logging.info('=============================')
+  return (retorno, 201)
+
+@app.route(api+'teste/slot6', methods=['POST'])
+def teste_slot6():
+  
+  data_json = request.get_json()
+  logging.info('POST >> teste/slot6')
+  
+  logging.info(data_json)
+  objeto = {
+    'dados':data_json['dados']
+    }
+  
+  retorno = sqs_enviar_comando_1(objeto)
+  
+  logging.info('=============================')
+  return (retorno, 201)
+
 
 ####
 ### BFF Angular
@@ -259,6 +328,7 @@ if __name__ == "__main__":
 
   print('AMBIENTE='+os.getenv("AMBIENTE"))
   print('BANCO='+os.getenv("BANCO"))
+  print('SQS='+os.getenv("SQS"))
   print('VERSAO_LOGICA='+os.getenv("VERSAO"))
   print('PROJETO='+os.getenv("PROJETO"))
   

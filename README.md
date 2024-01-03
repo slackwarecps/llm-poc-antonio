@@ -158,7 +158,7 @@ $ docker build -t fabioalvaro/poc-laranja:latest .
 
 Crie um arquivo .env com as seguinte variaveis de ambiente
 
-````
+```
 ## Arquivo de configuracao /config/.env
 AMBIENTE=PRODUCAO
 GPT_API_KEY=sk-LEasdasdasdasd
@@ -171,8 +171,8 @@ STATUS_CALLBACK=http://asdasdasd.compute-1.amazonaws.com:8080/poc-laranja/v1/ser
 REMETENTE_TWILIO_WHATS=186asdasdasdas
 TWILIO_ACCOUNT_SID=ACf1f1f7asdasdasdasdas
 VERSAO=V2
+```
 
-````
 
 ## gerando o docker
 $ docker build -t fabioalvaro/poc-laranja:latest .
@@ -194,3 +194,31 @@ AMBIENTE=PRD
 BANCO=REMOTO
 VERSAO_LOGICA=V2
 ASSISTENTE_ID_VAR=asst_Z1pMBbuDlAQLLJ0nyTMttgHl
+
+
+### Filas SQS
+sqs_pergunta_criada.fifo
+sqs_concluido.fifo
+sqs_wait_action.fifo
+
+
+## Comandos
+
+## comando 1 Aguardar status
+cmd1
+thread_id
+run_id
+
+## comando 2 concluido
+cmd3
+telefone
+respostas[]
+
+
+## comando 3 wait action
+cmd2
+thread_id
+run_id
+call_id
+parametros
+
