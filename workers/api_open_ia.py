@@ -7,9 +7,8 @@ import requests
 import json
 
 
-load_dotenv(
-    '/Users/fabioalvaropereira/workspaces/llm/llm-poc-antonio/config/.env')
-logging.basicConfig(filename='/Users/fabioalvaropereira/workspaces/llm/llm-poc-antonio/workers/worker.log',
+load_dotenv('../config/.env')
+logging.basicConfig(filename='worker.log',
                     encoding='utf-8', level=logging.INFO)
 
 # Cabeçalhos para a requisição
