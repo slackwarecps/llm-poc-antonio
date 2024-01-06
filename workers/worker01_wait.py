@@ -7,9 +7,8 @@ import requests
 from dotenv import load_dotenv
 from api_open_ia import openai_thread_busca_status, openai_thread_submit_tool
 
-load_dotenv(
-    '/Users/fabioalvaropereira/workspaces/llm/llm-poc-antonio/config/.env')
-logging.basicConfig(filename='/Users/fabioalvaropereira/workspaces/llm/llm-poc-antonio/workers/worker.log',
+load_dotenv('../config/.env')
+logging.basicConfig(filename='worker.log',
                     encoding='utf-8', level=logging.INFO)
 
 print('[worker1] >>> worker1 subiu !!!')

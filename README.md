@@ -224,3 +224,10 @@ parametros
 
 ## para rodar
 $  python -m flask run --host=0.0.0.0 --port=8080
+
+
+### Filas
+sqs_01_wait_status.fifo
+sqs_02_concluido.fifo
+sqs_03_submit_assincrono.fifo
+
