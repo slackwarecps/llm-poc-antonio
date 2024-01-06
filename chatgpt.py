@@ -149,24 +149,24 @@ def deve_processa_novamente(MensagemDeErro):
 
 
 def func_gpt_rodar_assistente(thread_id, telefone='', assistant_id='', beta=[]):
-    logging.info("name: " + __name__)
-    logging.info(' #9 Entrou na chatgpt.func_gpt_rodar_assistente')
-    logging.info("     thread: " + str(thread_id))
-    logging.info('     telefone='+telefone)
-    logging.info('     assistant_id='+assistant_id)
-    logging.info('     beta=')
-    logging.info(beta)
+
+    logging.debug(' #9 Entrou na chatgpt.func_gpt_rodar_assistente')
+    logging.debug("     thread: " + str(thread_id))
+    logging.debug('     telefone='+telefone)
+    logging.debug('     assistant_id='+assistant_id)
+    logging.debug('     beta=')
+    logging.debug(beta)
     if assistant_id == '':
         assistant_id = ASSISTENTE_ID_VAR
-        logging.info('usando o default ASSISTENTE_ID_VAR='+ASSISTENTE_ID_VAR)
+        logging.debug('usando o default ASSISTENTE_ID_VAR='+ASSISTENTE_ID_VAR)
 
     if telefone in beta:
-        logging.info('assistant_id='+assistant_id)
+        logging.debug('assistant_id='+assistant_id)
         payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
-        logging.info("ASSISTENTE_ID: Bugiganga!!!xxxx")
+        logging.debug("ASSISTENTE_ID: Bugiganga!!!xxxx")
     else:
         payload = {"assistant_id": assistant_id}
-        logging.info("ASSISTENTE_ID: "+assistant_id)
+        logging.debug("ASSISTENTE_ID: "+assistant_id)
 
     # Fazendo a requisição POST
     url = url_api + '/threads/'+thread_id+'/runs'
@@ -228,8 +228,8 @@ def func_gpt_busca_mensagens(thread_id=''):
 
 
 def func_gpt_busca_runs_ativas(thread_id=''):
-    logging.info(' Entrou na chatgpt.func_gpt_busca_runs_ativas ')
-    logging.info("thread: " + thread_id)
+    logging.debug(' Entrou na chatgpt.func_gpt_busca_runs_ativas ')
+    logging.debug("thread: " + thread_id)
     # Fazendo a requisição POST
     url = url_api + '/threads/'+thread_id+'/runs'
     response = requests.get(url, headers=headers)
@@ -239,11 +239,11 @@ def func_gpt_busca_runs_ativas(thread_id=''):
 
     # Verifica se a requisição foi bem-sucedida
     if response.status_code == 200:
-        logging.info("   chatgpt.func_gpt_busca_runs_ativas com sucesso ")
+        logging.debug("   chatgpt.func_gpt_busca_runs_ativas com sucesso ")
         # for item in data2:
         retorno = response.json()
         resposta = {}
-        logging.info(retorno['data'])
+        # logging.info(retorno['data'])
         for run in retorno['data']:
             if run['status'] not in ['expired', 'completed']:
                 tool_calls_id = run['required_action']['submit_tool_outputs']['tool_calls'][0]['id']

@@ -46,7 +46,7 @@ def func_twilio_chegou(request):
         numeros_beta_fabio = dynamo_parametros['Items'][0]['numeros_beta_fabio']
 
     logging.info('================================ ')
-    logging.info("name: " + __name__)
+    # logging.info("name: " + __name__)
     logging.info('Entrou na func_twilio_chegou')
     telefone = request.form.get('WaId')
     mensagem = request.form.get('Body')
@@ -63,19 +63,19 @@ def func_twilio_chegou(request):
     # CLIENTE JA ESTA CADASTRADO
     if verifica_cliente_esta_na_tabela(telefone) == True:
 
-        logging.info('  #1. cliente esta na base')
+        # logging.info('  #1. cliente esta na base')
         # verifica se esta usando o modo do Assistente
         assistente_esta_ativo = verifica_cliente_modo_assistente_ligado(
             telefone)
-        logging.info('  cliente_modo=' + str(assistente_esta_ativo))
+       # logging.info('  cliente_modo=' + str(assistente_esta_ativo))
         telefone = telefone
 
     # CLIENTE NAO CADASTRADO, PRIMEIRO ACESSO!!
     else:
 
-        logging.info('  #1. cliente NAO esta na base, entao vai ser criado')
+        # logging.info('  #1. cliente NAO esta na base, entao vai ser criado')
         resposta = dynamo_cliente_salvar(telefone, nome_do_whatsapp)
-        logging.info("Cliente cadastrado com sucesso")
+        # logging.info("Cliente cadastrado com sucesso")
         # pprint(resposta, sort_dicts=False)
         telefone = telefone
         assistente_esta_ativo = True
@@ -89,7 +89,7 @@ def func_twilio_chegou(request):
 
         if 'id' in dynamodb_thread:
             # if existe_thread!='null':
-            logging.info('  Sim Existe thread  :)')
+            logging.debug('  Sim Existe thread  :)')
         else:
             logging.info('  Não existe thread  :(  )')
             # 50 criar a thead do gpt
@@ -107,21 +107,21 @@ def func_twilio_chegou(request):
         # if existe_thread!='null':
         #  logging.info('  Sim Existe thread  :)')
         # else:
-        logging.info(' NAO VERIFICO THREAD LOGICA V2 CRIO SEMPRE UMA NOVA')
+        logging.debug(' NAO VERIFICO THREAD LOGICA V2 CRIO SEMPRE UMA NOVA')
         # 50 criar a thead do gpt
         thread_criada = func_gpt_criar_thread()
-        logging.info(thread_criada)
+        logging.debug(thread_criada)
         dynamodb_thread = thread_criada['id']
         # 4 Criar a thread no banco
         thread_db = dynamo_thread_salvar(telefone, thread_criada)
-        logging.info(' #4 thread salva no banco de de dados :' +
-                     thread_criada['id'])
+        logging.debug(' #4 thread salva no banco de de dados :' +
+                      thread_criada['id'])
 
     # #5 Insere a Mensagem na thread
     agora_epoch = func_agora_epoch()
     resposta_assincrona = False
     beta_assistente_personalizado = ''
-    logging.info('assistente_esta_ativo='+str(assistente_esta_ativo))
+    logging.debug('assistente_esta_ativo='+str(assistente_esta_ativo))
     if assistente_esta_ativo == True:
         thread_id = dynamodb_thread['id']
         existe_run_ativa_sem_resposta = True
@@ -129,8 +129,8 @@ def func_twilio_chegou(request):
         # Tem run ativa?
         # ===================
         retorno_runs = func_gpt_busca_runs_ativas(thread_id)
-        logging.info(retorno_runs)
-        logging.info("Runs ativas encontradas: "+str(len(retorno_runs)))
+        logging.debug(retorno_runs)
+        logging.debug("Runs ativas encontradas: "+str(len(retorno_runs)))
         tem_run_ativa = len(retorno_runs) > 0
         if len(retorno_runs) > 0:
             for item in retorno_runs:
@@ -154,22 +154,22 @@ def func_twilio_chegou(request):
                 }
             }
             sqs_enviar_comando_1(payload_cmd1)
-            logging.info(
+            logging.debug(
                 'Comando 1 wait_status depois de ter rodados os submits.: ')
             logging.info(payload_cmd1)
 
             # =====================
 
-        logging.info('Data Convertida teste:' +
-                     func_converteDataPochToBR(1704461349))
+        logging.debug('Data Convertida teste:' +
+                      func_converteDataPochToBR(1704461349))
 
         if tem_run_ativa == False:
             retorno_msg = insere_mensagem_na_thread(
                 telefone, thread_id, mensagem)
             run_id = roda_assistente(
                 thread_id, telefone, beta_assistente_personalizado, numeros_beta_fabio)
-            logging.info("Run: "+run_id)
-            logging.info(' ')
+            logging.debug("Run: "+run_id)
+            logging.debug(' ')
             # aguardo - enviando comando 1 - wait/status
 
             payload_cmd1 = {
@@ -182,7 +182,7 @@ def func_twilio_chegou(request):
             }
             sqs_enviar_comando_1(payload_cmd1)
             logging.info('Comando 1 wait status enviado: ')
-            logging.info(payload_cmd1)
+            # logging.info(payload_cmd1)
             logging.info(
                 'FIM --- Pergunta feita, agente rodou. agora é só esperar e devolver a resposta.')
         else:
@@ -347,11 +347,11 @@ def verifica_cliente_esta_na_tabela(telefone):
     cliente = dynamo_cliente_busca_por_telefone(telefone)
     logging.info('  #6. busca cliente no banco :' + telefone)
     if cliente != 'null':
-        print("Sim tem o telefone:")
+        # print("Sim tem o telefone:")
         # pprint(cliente, sort_dicts=False)
         return True
     else:
-        print('Nao tem o telefone '+telefone)
+        # print('Nao tem o telefone '+telefone)
         return False
 
 
@@ -529,15 +529,15 @@ def dynamo_mensagem_salvar(telefone, thread, mensagem, dynamodb=None):
 
 # Filtra as mensagens do assistente
 def filtra_as_mensagens_do_assistente(lista_de_mensagens=[]):
-    logging.info('    # =====>    Filtrando mensagens')
+    # logging.info('    # =====>    Filtrando mensagens')
     retorno = lista_de_mensagens
     return retorno
 
 
 def roda_assistente(thread_id, telefone='', beta_assistente_personalizado='', beta=[]):
-    logging.info(' #9 rodando o twiliox.roda_assistente...')
-    print('#9 beta')
-    print(beta)
+    # logging.info(' #9 rodando o twiliox.roda_assistente...')
+    # print('#9 beta')
+    # print(beta)
     retorno = func_gpt_rodar_assistente(
         thread_id, telefone, beta_assistente_personalizado, beta)
     resposta = 'null'
