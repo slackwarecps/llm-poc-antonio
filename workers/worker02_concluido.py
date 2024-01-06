@@ -5,10 +5,11 @@ import os
 import json
 from dotenv import load_dotenv
 import requests
-from api_open_ia import openai_thread_busca_status,openai_thread_submit_tool
+from api_open_ia import openai_thread_busca_status, openai_thread_submit_tool
 
 load_dotenv('../config/.env')
-logging.basicConfig(filename='worker.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='worker.log',
+                    encoding='utf-8', level=logging.INFO)
 
 print('[worker2] >>> WORKER 2 Concluido subiu !!!')
 logging.info('[worker2] >>> WORKER 2 Concluido subiu  !!!')
@@ -31,8 +32,7 @@ headers = {
 }
 
 
-
-if os.getenv("SQS")=='LOCAL':    
+if os.getenv("SQS") == 'LOCAL':
     # Cria o cliente SQS apontando para o LocalStack
     sqs_client = boto3.client(
         'sqs',
@@ -43,8 +43,8 @@ if os.getenv("SQS")=='LOCAL':
     )
 else:
     # Cria o cliente SQS apontando para o LocalStack
-    sqs_client = boto3.client('sqs',config=client_config)
-    
+    sqs_client = boto3.client('sqs', config=client_config)
+
 logging.info('[worker2] SQS='+str(os.getenv("SQS")))
 print('[worker2] SQS='+str(os.getenv("SQS")))
 
@@ -63,9 +63,10 @@ try:
 
 except Exception as e:
     logging.error(f"Erro: {e}")
-    
-    
-logging.info("[worker2] Aguardando mensagens... Para interromper, pressione Ctrl+C")
+
+
+logging.info(
+    "[worker2] Aguardando mensagens... Para interromper, pressione Ctrl+C")
 
 try:
     while True:
@@ -80,43 +81,51 @@ try:
         if 'Messages' in messages:
             for message in messages['Messages']:
                 # Processa a mensagem
-                logging.info('')          
+                apaga_mensagem = False
+                logging.info('worker2**************************************')
+                logging.info('worker2 Mensagem do comando 2')
                 body = json.loads(message['Body'])
-                logging.info(body) 
-                
-                thread_id=body['dados']['telefone']
+                logging.info(body)
+                logging.info('worker2 **************************************')
+
+                try:
+                    destino = body['dados']['destino']
+                    mensagem = body['dados']['mensagem']
+                except Exception as e:
+                    logging.info(
+                        f"worker2 !!!! Erro ao lera variaveis no comando 2 >> {e}")
+
                 # thread_id=body['dados']['thread_id']
                 # run_id=body['dados']['run_id']
                 # tool_call_id =body['dados']['tool_call_id']
-                
-                # FARIA UMA CONSULTA A API DO CLIENTE DE AGENDAMENTO...... #TODO
-                # output=body['dados']['output']
-                
-                logging.info("[worker2] FAKE - busca respostas")
-                logging.info("[worker2] FAKE - envia mensagens do whats no twilio")
-   
-                # url = 'http://localhost:8080/poc-azul/v1/teste/slot4'
-                # payload={
-                #             "dados": {
-                #                 "thread_id": thread_id,
-                #                 "run_id": run_id,
-                #                 "tool_call_id": tool_call_id,
-                #                 "output": output
-                #             }
-                #         }
-                # response = requests.post(url, headers=headers,data=json.dumps(payload))         
-                # if response.status_code==400:
-                #   logging.info (response.json['error'])  
-                
-                #logging.info ( response)
-                
-                if (1==2):
-                  # Deleta a mensagem da fila após processá-la
-                  sqs_client.delete_message(
-                       QueueUrl=queue_url,
+
+                # TWILIO WHATSAPP ########################################
+                url = 'http://localhost:8080/poc-azul/v1/teste/slot8'
+                payload = {
+                    "dados": {
+                        "remetente": "14155238886",
+                        "mensagem": mensagem,
+                        "destino": destino
+                    }
+                }
+                response = requests.post(
+                    url, headers=headers, data=json.dumps(payload))
+                logging.info(response)
+                if response.status_code == 400:
+                    logging.info(response.json['error'])
+                if response.status_code == 201:
+                    apaga_mensagem = True
+                logging.info(response)
+                # TWILIO WHATSAPP ########################################
+
+                if (apaga_mensagem == True):
+                    # Deleta a mensagem da fila após processá-la
+                    sqs_client.delete_message(
+                        QueueUrl=queue_url,
                         ReceiptHandle=message['ReceiptHandle']
-                   )
-                  logging.info(f"[worker2] Comando2 de Concluido foi removido da  fila: {message['ReceiptHandle']}")
+                    )
+                    logging.info(
+                        f"[worker2] Comando2 de Concluido Whatsapp Enviado  fila: {message['ReceiptHandle']}")
         else:
             # Se não há mensagens, o loop continua
             logging.info("[worker2] Nenhuma mensagem nova.")

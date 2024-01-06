@@ -163,7 +163,7 @@ Crie um arquivo .env com as seguinte variaveis de ambiente
 AMBIENTE=PRODUCAO
 GPT_API_KEY=sk-LEasdasdasdasd
 ASSISTENTE_ID=asst_Z1pasdasdasd
-BANCO=REMOTO
+BANCO=REMOTO|LOCAL
 TWILIO_ACCOUNT=ACf1f1asdasdasd
 TWILIO_AUTH_TOKEN=ecf987asdasdasd
 TWILIO_BASIC_RESPOSTA=QUNmMWYasdasdasdasdasda
@@ -191,7 +191,7 @@ tmux attach -t flask
 $ pip install flask_socketio
 
 AMBIENTE=PRD
-BANCO=REMOTO
+BANCO=REMOTO|LOCAL
 VERSAO_LOGICA=V2
 ASSISTENTE_ID_VAR=asst_Z1pMBbuDlAQLLJ0nyTMttgHl
 
@@ -222,3 +222,5 @@ run_id
 call_id
 parametros
 
+## para rodar
+$  python -m flask run --host=0.0.0.0 --port=8080

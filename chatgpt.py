@@ -7,9 +7,9 @@ import os
 from dotenv import load_dotenv
 import time
 from services.sqs import sqs_enviar
-  
 
-debug=False
+
+debug = False
 load_dotenv('config/.env')
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -17,7 +17,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Endpoint da GPT-4 API
 url_api = 'https://api.openai.com/v1'
-ASSISTENTE_ID_VAR = os.getenv("ASSISTENTE_ID_VAR") #'asst_Z1pMBbuDlAQLLJ0nyTMttgHl'
+# 'asst_Z1pMBbuDlAQLLJ0nyTMttgHl'
+ASSISTENTE_ID_VAR = os.getenv("ASSISTENTE_ID_VAR")
 
 # Cria um identificador único para a sessão da conversa
 session_id = str(uuid.uuid4())
@@ -82,176 +83,204 @@ tools = [
 
 
 def func_gpt_criar_thread():
-  logging.info("name: "+ __name__)
-  logging.info(' #4 Entrou na func_gpt_criar_thread')
+    logging.info("name: " + __name__)
+    logging.info(' #4 Entrou na func_gpt_criar_thread')
 
-  # Fazendo a requisição POST
-  url = url_api + '/threads'
-  response = requests.post(url, headers=headers)
-  # Verifica se a requisição foi bem-sucedida
-  if response.status_code == 200:
-      # Extraindo a resposta
-      response_data = response.json()
-      # A resposta do chat pode ser encontrada em 'choices'
-      #chat_response = response_data.get('choices', [{}])[0].get('text', '').strip()
-      #print(response_data)
-      logging.info(' #4 thread criada no chatgpt')
-      return response_data
-  else:
-      logging.error(f"Erro ao fazer a requisição: {response.status_code}")
-      return 'null'
-  
-  
-  
-def func_gpt_criar_mensagem(thread,mensagem):
-  logging.info("name: "+ __name__)
-  logging.info(' #5 Entrou na func_gpt_criar_mensagem ')  
-  payload = {
-            "role": "user",
-            "content": mensagem
+    # Fazendo a requisição POST
+    url = url_api + '/threads'
+    response = requests.post(url, headers=headers)
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        # Extraindo a resposta
+        response_data = response.json()
+        # A resposta do chat pode ser encontrada em 'choices'
+        # chat_response = response_data.get('choices', [{}])[0].get('text', '').strip()
+        # print(response_data)
+        logging.info(' #4 thread criada no chatgpt')
+        return response_data
+    else:
+        logging.error(f"Erro ao fazer a requisição: {response.status_code}")
+        return 'null'
+
+
+def func_gpt_criar_mensagem(thread_id, mensagem):
+    logging.info("name: " + __name__)
+    logging.info(' #5 chatgpt.func_gpt_criar_mensagem ')
+    payload = {
+        "role": "user",
+        "content": mensagem
     }
-  # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread['id']+'/messages'
-  response = requests.post(url, headers=headers,data=json.dumps(payload))
-  #logging.info("status_code="+str(response.status_code))
-  # Verifica se a requisição foi bem-sucedida
-  if response.status_code == 200:
-    logging.info("   #5 51 Mensagem criada com sucesso no chat gpt.")
-    return response.json()
-  else:
-    logging.error("   #5 51 Falha ao criar mensagem no chat gpt.")
-    logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
-    return 'null'
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/messages'
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    retorno1 = response.json()
+    # logging.info("status_code="+str(response.status_code))
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        logging.info("   #5 51 Mensagem criada com sucesso no chat gpt.")
+        return response.json()
+    else:
+        logging.error("   #5 51 Falha ao chatgpt.func_gpt_criar_mensagem.")
+        logging.error(
+            f"Status Code: {response.status_code}, Response: {response.text}")
+        logging.error(retorno1['error']['message'])
+        if (deve_processa_novamente(retorno1['error']['message']) == True):
+            logging.error(' ')
+            logging.error(
+                'x xxxxxxxx xxxxxxxx xxxxx SIM VAI RE-PROCESSAR local:criar mensagem xxxxxxxxxxxx')
+            logging.error(' ')
+            logging.error(' ')
+            # func_gpt_rodar_assistente(response['thread_id'],telefone,assistant_id)
+            return 're-processar'
+        else:
+            return 'null'
 
 
+def deve_processa_novamente(MensagemDeErro):
+    retorno = False
+    phrase = 'already has an active run '
+    phrase2 = ' while a run '
+
+    if phrase in MensagemDeErro:
+        retorno = True
+    if phrase2 in MensagemDeErro:
+        retorno = True
+    return retorno
 
 
+def func_gpt_rodar_assistente(thread_id, telefone='', assistant_id='', beta=[]):
+    logging.info("name: " + __name__)
+    logging.info(' #9 Entrou na chatgpt.func_gpt_rodar_assistente')
+    logging.info("     thread: " + str(thread_id))
+    logging.info('     telefone='+telefone)
+    logging.info('     assistant_id='+assistant_id)
+    logging.info('     beta=')
+    logging.info(beta)
+    if assistant_id == '':
+        assistant_id = ASSISTENTE_ID_VAR
+        logging.info('usando o default ASSISTENTE_ID_VAR='+ASSISTENTE_ID_VAR)
 
-def func_gpt_rodar_assistente(thread,telefone='',assistant_id='',beta=[]):
-  logging.info("name: "+ __name__)
+    if telefone in beta:
+        logging.info('assistant_id='+assistant_id)
+        payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
+        logging.info("ASSISTENTE_ID: Bugiganga!!!xxxx")
+    else:
+        payload = {"assistant_id": assistant_id}
+        logging.info("ASSISTENTE_ID: "+assistant_id)
 
-  logging.info(' #9 Entrou na func_gpt_criar_mensagem ') 
-  
-  logging.info("thread: "+ thread['id'])
-  #time.sleep(10)
-  #Fabio usa o bugiganga
-  print('telefone='+telefone)
-  print('assistant_id='+assistant_id)
-  print('beta=')
-  print(beta)
-  
-  
-  if telefone in beta:    
-    print('assistant_id='+assistant_id)
-    payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
-    logging.info("ASSISTENTE_ID: Bugiganga!!!xxxx")
-  else:
-    payload = {"assistant_id": 'asst_8TumJSDdiN6xoPczLr4MktAu'}
-    logging.info("ASSISTENTE_ID: asst_8TumJSDdiN6xoPczLr4MktAu")
-  
-  # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread['id']+'/runs'
-  response = requests.post(url, headers=headers,data=json.dumps(payload))
-  #logging.info("status_code="+str(response.status_code))
-  # Verifica se a requisição foi bem-sucedida
-  if response.status_code == 200:
-    logging.info("   #9 Assistente foi acionado no chat gpt")
-    logging.info(response.json())
-    
-    try:
-      #Deu certo coloca na fila
-      # Insere na fila SQS service/sqs
-      gerado_uuid = str(uuid.uuid4() )
-      dados = {
-        "thread_id": response['thread_id'],
-        "run_id": response['id']
-      }
-      objeto = {
-      'uuid':gerado_uuid,
-      'data':response['created_at'],
-      'horario':response['horario'],
-      'vistoriador_remoto': response['vistoriador_remoto'],
-      'dados':dados
-      }    
-      retorno_sqs = sqs_enviar(objeto)
-      logging.info(retorno_sqs)
-    except Exception as e:        
-        logging.error(f"chatgpt.func_gpt_rodar_assistente >> Erro ao Colocar na fila sqs!!: {e}")
-    
-    return response.json()
-  else:
-    logging.error("   #9 Falha ao chatgpt/RodarAssistente")
-    logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
-    return 'null'
-  
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/runs'
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    retorno1 = response.json()
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        logging.info("   #9 chatgpt.func_gpt_rodar_assistente")
+        # logging.info(retorno1)
+        return response.json()
+    else:
+        logging.error("   #9 Falha ao chatgpt.func_gpt_rodar_assistente")
+        logging.error(
+            f"Status Code: {response.status_code}, Response: {response.text}")
+        logging.error(retorno1['error']['message'])
+        return 'null'
 
-  
-  
-  
-  
-  
-  
-  
-# RODA O ALGORITIMO DO CHATGPT RUN 
+
+# RODA O ALGORITIMO DO CHATGPT RUN
 # 'expired','in_progress','completed'
-def func_gpt_status_do_run_do_assistente(thread_id,run_id):
-  logging.info(' #11 Entrou na func_gpt_status_do_run_do_assistente ') 
-  logging.info("assistant_id: "+ ASSISTENTE_ID_VAR)
-  logging.info("thread: "+ str(thread_id))
-  # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread_id+'/runs/'+run_id
-  response = requests.get(url, headers=headers)
+def func_gpt_status_do_run_do_assistente(thread_id, run_id):
+    logging.info(' #11 Entrou na func_gpt_status_do_run_do_assistente ')
+    logging.info("assistant_id: " + ASSISTENTE_ID_VAR)
+    logging.info("thread: " + str(thread_id))
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/runs/'+run_id
+    response = requests.get(url, headers=headers)
 
-  # Verifica se a requisição foi bem-sucedida
-  if response.status_code == 200:
-    logging.info("   #11 CHATGPT RUN")
-    #logging.info(response.json())
-    return response.json()
-  else:
-    logging.error("   #11 Falha ao CHATGPT RUN")
-    logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
-    return 'null'
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        logging.info("   #11 CHATGPT RUN")
+        # logging.info(response.json())
+        return response.json()
+    else:
+        logging.error("   #11 Falha ao CHATGPT RUN")
+        logging.error(
+            f"Status Code: {response.status_code}, Response: {response.text}")
+        return 'null'
 
 
-
-# Busca Mensagens da Thread 
+# Busca Mensagens da Thread
 def func_gpt_busca_mensagens(thread_id=''):
-  logging.info(' #15 Entrou na func_gpt_busca_mensagens ') 
-  logging.info("thread: "+ thread_id)
-  # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread_id+'/messages'
-  response = requests.get(url, headers=headers)
+    logging.info(' #15 Entrou na func_gpt_busca_mensagens ')
+    logging.info("thread: " + thread_id)
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/messages'
+    response = requests.get(url, headers=headers)
 
-  # Verifica se a requisição foi bem-sucedida
-  if response.status_code == 200:
-    logging.info("   #15 busca_mensagens realizada com sucesso ")
-    #logging.info(response.json())
-    return response.json()
-  else:
-    logging.error("   #15 Falha ao busca_mensagens")
-    logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
-    return 'null'
-  
-def func_gpt_submit_tool(thread_id='',run_id='',tool_call_id='',output=''):
-  logging.info('>>> func_gpt.func_gpt_submit_tool') 
-  
-  payload= {
-              "tool_outputs": [
-                  {
-                      "tool_call_id": tool_call_id,
-                      "output": output
-                  }
-              ]
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        logging.info("   #15 busca_mensagens realizada com sucesso ")
+        # logging.info(response.json())
+        return response.json()
+    else:
+        logging.error("   #15 Falha ao busca_mensagens")
+        logging.error(
+            f"Status Code: {response.status_code}, Response: {response.text}")
+        return 'null'
+
+
+def func_gpt_busca_runs_ativas(thread_id=''):
+    logging.info(' Entrou na chatgpt.func_gpt_busca_runs_ativas ')
+    logging.info("thread: " + thread_id)
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/runs'
+    response = requests.get(url, headers=headers)
+    retorno = response.json
+
+    lista = []
+
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        logging.info("   chatgpt.func_gpt_busca_runs_ativas com sucesso ")
+        # for item in data2:
+        retorno = response.json()
+        resposta = {}
+        logging.info(retorno['data'])
+        for run in retorno['data']:
+            if run['status'] not in ['expired', 'completed']:
+                tool_calls_id = run['required_action']['submit_tool_outputs']['tool_calls'][0]['id']
+                item = {"run_id": run['id'],
+                        "status": run['status'], "call_id": tool_calls_id}
+                lista.append(item)
+
+            # logging.info(run['id']+' | '+run['status'])
+
+        # logging.info(resposta)
+        return lista
+    else:
+        logging.error("   Falha ao chatgpt.func_gpt_busca_runs_ativas")
+        logging.error(
+            f"Status Code: {response.status_code}, Response: {response.text}")
+        return 'null'
+
+
+def func_gpt_submit_tool(thread_id='', run_id='', tool_call_id='', output=''):
+    logging.info('>>> func_gpt.func_gpt_submit_tool')
+
+    payload = {
+        "tool_outputs": [
+            {
+                "tool_call_id": tool_call_id,
+                "output": output
             }
-  # Fazendo a requisição POST
-  url = url_api + '/threads/'+thread_id+'/runs/'+run_id+'/submit_tool_outputs'
-  
-  response = requests.post(url, headers=headers,data=json.dumps(payload))
- 
+        ]
+    }
+    # Fazendo a requisição POST
+    url = url_api + '/threads/'+thread_id+'/runs/'+run_id+'/submit_tool_outputs'
 
-  if response.status_code == 200:
-    return response.json()
-  else:
-    logging.error(">>> Falha func_gpt.func_gpt_submit_tool")
-    #logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
-    return 'null'
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        logging.error(">>> Falha func_gpt.func_gpt_submit_tool")
+        # logging.error(f"Status Code: {response.status_code}, Response: {response.text}")
+        return 'null'

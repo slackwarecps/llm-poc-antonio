@@ -87,7 +87,8 @@ try:
                 thread_id=body['dados']['thread_id']
                 run_id=body['dados']['run_id']
                 tool_call_id =body['dados']['tool_call_id']
-                
+                telefone=body['dados']['telefone']
+                assistant_id=body['dados']['assistant_id']
                 # FARIA UMA CONSULTA A API DO CLIENTE DE AGENDAMENTO...... #TODO
                 output=body['dados']['output']
    
@@ -100,9 +101,25 @@ try:
                                 "output": output
                             }
                         }
-                response = requests.post(url, headers=headers,data=json.dumps(payload))         
+                response = requests.post(url, headers=headers,data=json.dumps(payload))     
+                logging.info("     aaaaaaaaaaaaaaaaaaaaaaaa aaaaaa aaaaaaa")
+                logging.info(    response )
                 if response.status_code==400:
-                  logging.info (response.json['error'])  
+                  logging.info (response.json['error'])
+                if response.status_code in [200,201]:
+                  logging.info("     aaaaaaaaaaaaaaa!!!!!       Apos a chamada assincrona rodar o assistente novamente....")
+                  url2 = 'http://localhost:8080/poc-azul/v1/teste/slot7'
+                  payload2={
+                            "dados": {
+                                "thread_id": thread_id,
+                                "telefone": telefone,
+                                "assistant_id": assistant_id
+                            }
+                        }
+                  response2 = requests.post(url2, headers=headers,data=json.dumps(payload2))
+                
+                  
+                    
                 
                 #logging.info ( response)
                 
