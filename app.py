@@ -163,7 +163,8 @@ def teste_slot2():
 def teste_slot3():
 
     data_json = request.get_json()
-    logging.info('POST >> teste/slot3')
+    logging.info('=============================')
+    logging.info('POST >> teste/slot3 /* Cria uma comando 3 - submit tool*/')
 
     logging.info(data_json)
     objeto = {
@@ -180,7 +181,9 @@ def teste_slot3():
 def teste_slot4():
 
     data_json = request.get_json()
-    logging.info('POST >> teste/slot4')
+    logging.info('=============================')
+    logging.info(
+        'POST >> teste/slot4 /* ENVIA AO CHATGPT O SUBMIT ASSINCRONO*/')
 
     logging.info(data_json)
     objeto = {
@@ -216,9 +219,9 @@ def teste_slot5():
 
 @app.route(api+'teste/slot6', methods=['POST'])
 def teste_slot6():
-
+    logging.info('=============================')
     data_json = request.get_json()
-    logging.info('POST >> teste/slot6')
+    logging.info('POST >> teste/slot6 /**envia comando 1 - aguardar wait status **/')
 
     logging.info(data_json)
     objeto = {
@@ -237,9 +240,11 @@ def teste_slot6():
 
 @app.route(api+'teste/slot7', methods=['POST'])
 def teste_slot7():
-
+    logging.info('')
+    logging.info('')
+    logging.info('=============================')
     data_json = request.get_json()
-    logging.info('POST >> teste/slot7')
+    logging.info('POST >> teste/slot7 /** RODA O ASSISTENTE NOVAMENTE  ** ')
 
     logging.info(data_json)
     objeto = {

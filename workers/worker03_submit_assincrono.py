@@ -5,10 +5,11 @@ import os
 import json
 from dotenv import load_dotenv
 import requests
-from api_open_ia import openai_thread_busca_status,openai_thread_submit_tool
+from api_open_ia import openai_thread_busca_status, openai_thread_submit_tool
 
 load_dotenv('../config/.env')
-logging.basicConfig(filename='worker.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='worker.log',
+                    encoding='utf-8', level=logging.INFO)
 
 print('[worker3] >>> WORKER 3 WAit_action subiu !!!')
 logging.info('[worker3] >>> WORKER 3 WAit_action subiu  !!!')
@@ -31,8 +32,7 @@ headers = {
 }
 
 
-
-if os.getenv("SQS")=='LOCAL':    
+if os.getenv("SQS") == 'LOCAL':
     # Cria o cliente SQS apontando para o LocalStack
     sqs_client = boto3.client(
         'sqs',
@@ -43,8 +43,8 @@ if os.getenv("SQS")=='LOCAL':
     )
 else:
     # Cria o cliente SQS apontando para o LocalStack
-    sqs_client = boto3.client('sqs',config=client_config)
-    
+    sqs_client = boto3.client('sqs', config=client_config)
+
 logging.info('[worker3] SQS='+str(os.getenv("SQS")))
 print('[worker3] SQS='+str(os.getenv("SQS")))
 
@@ -63,9 +63,10 @@ try:
 
 except Exception as e:
     logging.error(f"Erro: {e}")
-    
-    
-logging.info("[worker3] Aguardando mensagens... Para interromper, pressione Ctrl+C")
+
+
+logging.info(
+    "[worker3] Aguardando mensagens... Para interromper, pressione Ctrl+C")
 
 try:
     while True:
@@ -79,59 +80,62 @@ try:
 
         if 'Messages' in messages:
             for message in messages['Messages']:
+                apaga_mensagem = False
                 # Processa a mensagem
-                logging.info('')          
+                logging.info('')
+                logging.info('worker3 **************************************')
+                logging.info('worker3 Mensagem do comando 3 SUBMIT TOOL')
                 body = json.loads(message['Body'])
-                logging.info(body) 
-                
-                thread_id=body['dados']['thread_id']
-                run_id=body['dados']['run_id']
-                tool_call_id =body['dados']['tool_call_id']
-                telefone=body['dados']['telefone']
-                assistant_id=body['dados']['assistant_id']
-                # FARIA UMA CONSULTA A API DO CLIENTE DE AGENDAMENTO...... #TODO
-                output=body['dados']['output']
-   
+                logging.info(body)
+                logging.info('worker3 **************************************')
+
+                thread_id = body['dados']['thread_id']
+                run_id = body['dados']['run_id']
+                run_created = body['dados']['run_created']
+                tool_call_id = body['dados']['tool_call_id']
+                telefone = body['dados']['telefone']
+                assistant_id = body['dados']['assistant_id']
+                output = body['dados']['output']
+
+                # FASE 1 GERA SUBMIT ASSINCRONO  NO CHAT PGT
                 url = 'http://localhost:8080/poc-azul/v1/teste/slot4'
-                payload={
-                            "dados": {
-                                "thread_id": thread_id,
-                                "run_id": run_id,
-                                "tool_call_id": tool_call_id,
-                                "output": output
-                            }
+                payload = {
+                    "dados": {
+                        "thread_id": thread_id,
+                        "run_id": run_id,
+                        "tool_call_id": tool_call_id,
+                        "output": output
+                    }
+                }
+                response = requests.post(
+                    url, headers=headers, data=json.dumps(payload))
+                if response.status_code == 400:
+                    logging.info(response.json['error'])
+                if response.status_code in [200, 201]:
+                    # FASE 2 GERA O COMANDO PARA AGUARDAR/ WAIT / STATUS
+                    url2 = 'http://localhost:8080/poc-azul/v1/teste/slot6'
+                    payload2 = {
+                        "dados": {
+                            "thread_id": thread_id,
+                            "run_id": run_id,
+                            "run_created": run_created,
+                            "telefone": telefone
                         }
-                response = requests.post(url, headers=headers,data=json.dumps(payload))     
-                logging.info("     aaaaaaaaaaaaaaaaaaaaaaaa aaaaaa aaaaaaa")
-                logging.info(    response )
-                if response.status_code==400:
-                  logging.info (response.json['error'])
-                if response.status_code in [200,201]:
-                  logging.info("     aaaaaaaaaaaaaaa!!!!!       Apos a chamada assincrona rodar o assistente novamente....")
-                  url2 = 'http://localhost:8080/poc-azul/v1/teste/slot7'
-                  payload2={
-                            "dados": {
-                                "thread_id": thread_id,
-                                "telefone": telefone,
-                                "assistant_id": assistant_id
-                            }
-                        }
-                  response2 = requests.post(url2, headers=headers,data=json.dumps(payload2))
-                
-                  
-                    
-                
-                #logging.info ( response)
-                
-                if (1==1):
-                  # Deleta a mensagem da fila após processá-la
-                  sqs_client.delete_message(
-                       QueueUrl=queue_url,
+                    }
+                    response2 = requests.post(
+                        url2, headers=headers, data=json.dumps(payload2))
+                    apaga_mensagem = True
+
+                if (apaga_mensagem == True):
+                    # Deleta a mensagem da fila após processá-la
+                    sqs_client.delete_message(
+                        QueueUrl=queue_url,
                         ReceiptHandle=message['ReceiptHandle']
-                   )
-                  logging.info(f"[worker] Comando3 de submit-tool foi removido da  fila: {message['ReceiptHandle']}")
+                    )
+                    logging.info(
+                        f"[worker] Comando3 de submit-tool foi removido da  fila: {message['ReceiptHandle']}")
         else:
             # Se não há mensagens, o loop continua
-            logging.info("[worker3] Nenhuma mensagem nova.")
+            logging.debug("[worker3] Nenhuma mensagem nova.")
 except KeyboardInterrupt:
     logging.error("[worker3] \nInterrompido pelo usuário.")

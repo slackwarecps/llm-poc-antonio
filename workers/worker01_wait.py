@@ -65,17 +65,21 @@ logging.info(
     "[worker1] WAIT_STATUS_WORKER Aguardando mensagens... Para interromper, pressione Ctrl+C")
 
 
-def worker_1_cria_comando_3(thread_id, run_id, tool_call_id, output):
-    url = 'http://localhost:8080/poc-azul/v1/teste/slot4'
+def worker_1_cria_comando_3(thread_id, run_id, tool_call_id, output, run_created, telefone):
+    url = 'http://localhost:8080/poc-azul/v1/teste/slot3'
     payload = {
         "dados": {
             "thread_id": thread_id,
             "run_id": run_id,
+            "run_created": run_created,
             "tool_call_id": tool_call_id,
-            "output": output
+            "output": output,
+            "telefone": telefone,
+            "assistant_id": "asst_8TumJSDdiN6xoPczLr4MktAu"
         }
     }
     response = requests.post(url, headers=headers, data=json.dumps(payload))
+    return response
 
 
 def recuperar_itens(url, thread_id, run_created):
@@ -95,9 +99,9 @@ def recuperar_itens(url, thread_id, run_created):
             print(itens)
             retorno = itens
         else:
-            print(f"Erro ao acessar a URL: {response.status_code}")
+            print(f"[worker1] Erro ao acessar a URL: {response.status_code}")
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao fazer a requisição: {e}")
+        print(f"[worker1] Erro ao fazer a requisição: {e}")
     return retorno
 
 
@@ -116,12 +120,14 @@ try:
                 status_run = ''
                 remove_da_fila = False
                 # Processa a mensagem
-                logging.info('')
-                logging.info('**************************************')
-                logging.info('Mensagem do comando 1 - WAIT_STATUS')
+                logging.info('[worker1] ')
+                logging.info(
+                    '[worker1] **************************************')
+                logging.info('[worker1] Mensagem do comando 1 - WAIT_STATUS')
                 body = json.loads(message['Body'])
                 logging.info(body)
-                logging.info('**************************************')
+                logging.info(
+                    '[worker1] **************************************')
                 thread_id = body['dados']['thread_id']
                 run_id = body['dados']['run_id']
 
@@ -129,15 +135,32 @@ try:
 
                 status_run = retorno1['status']
                 # logging.info('[worker1] FAKE VERIFICA STATUS DA THREAD!!!!')
-                logging.info('thread_id='+thread_id +
+                logging.info('[worker1] thread_id='+thread_id +
                              ' | status_run='+status_run)
 
                 if status_run == 'in_progress':
-                    logging.info('status_run=in_progress')
+                    logging.info('[worker1] status_run=in_progress')
                     # Nao faz nada apenas aguarda.
                 if status_run == 'queued':
-                    logging.info('status_run=queued')
+                    logging.info('[worker1] status_run=queued')
                     # Nao faz nada apenas aguarda.
+
+                if status_run == 'requires_action':
+                    logging.info('[worker1] status_run=requires_action')
+                    # SE status_run_banco é diferente de requires_action
+                    run_created = body['dados']['run_created']
+                    telefone = body['dados']['telefone']
+
+                    tool_call_id = retorno1['required_action']['submit_tool_outputs']['tool_calls'][0]['id']
+                    logging.info('tool_call_id='+tool_call_id)
+                    # envia comando 3
+                    retorno_api = ' agendamento_codigo: 23632;data:15-01-2024;horario:17:00;Vistoriador_remoto:Denilson Silva;sucesso: true'
+                    retorno_cmd3 = worker_1_cria_comando_3(
+                        thread_id, run_id, tool_call_id, retorno_api, run_created, telefone)
+                    logging.info(retorno_cmd3)
+                    # muda status no banco
+                    # Remove a mensagem da fila
+                    remove_da_fila = True
 
                 if status_run == 'completed':
                     # tenho que pegar as mensagens que ainda nao enviei ate agora e enviar
@@ -149,7 +172,6 @@ try:
                     lista = recuperar_itens(url9, thread_id, run_created)
 
                     if len(lista) > 0:
-
                         for item in lista:
                             mensagem = mensagem + \
                                 item['content'][0]['text']['value']
@@ -157,7 +179,7 @@ try:
                     # ===============
 
                     # mensagem = ' preciso definir aqui no worker 1 WAIT, deveria vir pelo comando ne?'
-                    logging.info('[worker1]wait status_run=completed')
+                    logging.info('[worker1] wait status_run=completed')
                     destino = body['dados']['telefone']
 
                     # SE status_run_banco é diferente de completed
@@ -174,24 +196,9 @@ try:
                         logging.info(response.json['error'])
                     if response.status_code == 201:
                         logging.info(
-                            'worker1_wait >> comando2_concluido enviado com sucesso')
+                            '[worker1]  >> comando2_concluido enviado com sucesso')
                         logging.info(payload)
                         remove_da_fila = True
-                    # muda status no banco
-                    # Remove a mensagem da fila
-
-                # if status_run=='requires_action':
-                #   logging.info ('status_run=requires_action')
-                #   #SE status_run_banco é diferente de requires_action
-
-                #   tool_call_id = retorno1['required_action']['submit_tool_outputs']['tool_calls'][0]['id']
-                #   logging.info ('tool_call_id='+tool_call_id)
-                #   # envia comando 3
-                #   retorno_api = ' agendamento_codigo: 23632;data:15-01-2024;horario:17:00;Vistoriador_remoto:Denilson Silva;sucesso: true'
-                #   worker_1_cria_comando_3(thread_id,run_id,tool_call_id,retorno_api)
-                #   # muda status no banco
-                #   # Remove a mensagem da fila
-                #   remove_da_fila=True
 
                 if status_run == 'expired':
                     logging.info('[worker1] status_run=expired')
@@ -209,6 +216,6 @@ try:
                         f"[worker1] Mensagem verifica status da thread foi Removida da fila: {message['ReceiptHandle']}")
         else:
             # Se não há mensagens, o loop continua
-            logging.info("[worker1] Nenhuma mensagem nova.")
+            logging.debug("[worker1] Nenhuma mensagem nova.")
 except KeyboardInterrupt:
     logging.error("[worker1] \nInterrompido pelo usuário.")

@@ -95,10 +95,6 @@ try:
                     logging.info(
                         f"worker2 !!!! Erro ao lera variaveis no comando 2 >> {e}")
 
-                # thread_id=body['dados']['thread_id']
-                # run_id=body['dados']['run_id']
-                # tool_call_id =body['dados']['tool_call_id']
-
                 # TWILIO WHATSAPP ########################################
                 url = 'http://localhost:8080/poc-azul/v1/teste/slot8'
                 payload = {
@@ -125,9 +121,9 @@ try:
                         ReceiptHandle=message['ReceiptHandle']
                     )
                     logging.info(
-                        f"[worker2] Comando2 de Concluido Whatsapp Enviado  fila: {message['ReceiptHandle']}")
+                        f"[worker2] Comando2 de Concluido Whatsapp Enviado, removido da   fila: {message['ReceiptHandle']}")
         else:
             # Se não há mensagens, o loop continua
-            logging.info("[worker2] Nenhuma mensagem nova.")
+            logging.debug("[worker2] Nenhuma mensagem nova.")
 except KeyboardInterrupt:
     logging.error("[worker2] \nInterrompido pelo usuário.")

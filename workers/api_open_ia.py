@@ -22,17 +22,13 @@ headers = {
 
 def openai_thread_busca_status(thread_id='', run_id=''):
     url_api = str(os.getenv("URL_OPENAI"))
-    logging.info(' #11 Entrou na func_gpt_status_do_run_do_assistente ')
-    logging.info("assistant_id: " + str(os.getenv("ASSISTENTE_ID_VAR")))
-    logging.info("thread: " + str(thread_id))
     # Fazendo a requisição POST URL_OPENAI
     url = url_api + '/threads/'+thread_id+'/runs/'+run_id
-    print(url)
     response = requests.get(url, headers=headers)
 
     # Verifica se a requisição foi bem-sucedida
     if response.status_code == 200:
-        logging.info("   #200 openai_thread_busca_status")
+        logging.debug("   #200 openai_thread_busca_status")
         # logging.info(response.json())
         return response.json()
     else:
@@ -43,10 +39,10 @@ def openai_thread_busca_status(thread_id='', run_id=''):
 
 
 def openai_thread_submit_tool(thread_id='', run_id='', tool_call_id='', resposta=''):
-    logging.info(' envia submit tool ')
-    logging.info("assistant_id: " + str(os.getenv("ASSISTENTE_ID_VAR")))
-    logging.info("thread: " + str(thread_id))
-    logging.info("run_id: " + str(run_id))
+    logging.debug(' envia submit tool ')
+    logging.debug("assistant_id: " + str(os.getenv("ASSISTENTE_ID_VAR")))
+    logging.debug("thread: " + str(thread_id))
+    logging.debug("run_id: " + str(run_id))
     # Fazendo a requisição POST URL_OPENAI
     url = str(os.getenv("URL_OPENAI")) + '/threads/' + \
         thread_id+'/runs/'+run_id+'/submit_tool_outputs'
@@ -65,7 +61,7 @@ def openai_thread_submit_tool(thread_id='', run_id='', tool_call_id='', resposta
 
     # Verifica se a requisição foi bem-sucedida
     if response.status_code == 200:
-        logging.info("   submit ok")
+        logging.debug("   submit ok")
         # logging.info(response.json())
         return response.json()
     else:
@@ -73,21 +69,3 @@ def openai_thread_submit_tool(thread_id='', run_id='', tool_call_id='', resposta
         logging.error(
             f"Status Code: {response.status_code}, Response: {response.text}")
         return 'null'
-
-
-# print('Rodou api teste')
-# thread_id = 'thread_3I6n1VOVwL7hRLl8x9uoFRz4'
-# run_id = 'run_i0UoqikH8lpLvuWpBSeQCJOR'
-# retorno = openai_thread_busca_status(thread_id, run_id)
-# print(retorno['status'])
-
-# if retorno['status'] == 'requires_action':
-#     tool_call_id = retorno['required_action']['submit_tool_outputs']['tool_calls'][0]['id']
-#     print(retorno['required_action']
-#           ['submit_tool_outputs']['tool_calls'][0]['id'])
-#     retorno2 = openai_thread_submit_tool(thread_id, run_id, tool_call_id)
-#     print(retorno2)
-
-
-# retorno3 = openai_thread_busca_status(thread_id, run_id)
-# print(retorno3['status'])
